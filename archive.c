@@ -226,7 +226,7 @@ static int write_directory(struct archiver_context *c)
 
 static int queue_or_write_archive_entry(const struct object_id *oid,
 		struct strbuf *base, const char *filename,
-		unsigned mode, int stage, void *context)
+		unsigned mode, void *context)
 {
 	struct archiver_context *c = context;
 
@@ -311,10 +311,10 @@ int write_archive_entries(struct archiver_args *args,
 		git_attr_set_direction(GIT_ATTR_INDEX);
 	}
 
-	err = read_tree_recursive(args->repo, args->tree, "",
-				  0, 0, &args->pathspec,
-				  queue_or_write_archive_entry,
-				  &context);
+	err = read_tree(args->repo, args->tree,
+			&args->pathspec,
+			queue_or_write_archive_entry,
+			&context);
 	if (err == READ_TREE_RECURSIVE)
 		err = 0;
 	while (context.bottom) {
@@ -372,7 +372,7 @@ struct path_exists_context {
 };
 
 static int reject_entry(const struct object_id *oid, struct strbuf *base,
-			const char *filename, unsigned mode, int stage,
+			const char *filename, unsigned mode,
 			void *context)
 {
 	int ret = -1;
@@ -400,9 +400,9 @@ static int path_exists(struct archiver_args *args, const char *path)
 	ctx.args = args;
 	parse_pathspec(&ctx.pathspec, 0, 0, "", paths);
 	ctx.pathspec.recursive = 1;
-	ret = read_tree_recursive(args->repo, args->tree, "",
-				  0, 0, &ctx.pathspec,
-				  reject_entry, &ctx);
+	ret = read_tree(args->repo, args->tree,
+			&ctx.pathspec,
+			reject_entry, &ctx);
 	clear_pathspec(&ctx.pathspec);
 	return ret != 0;
 }
